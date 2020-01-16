@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: snorlax-postgresql
+  labels:
+    app: snorlax
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: snorlax
+    tier: postgresql
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "slow"
+  name: postgresql-pv-claim
+  labels:
+    app: snorlax
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: snorlax-postgresql
+  labels:
+    app: snorlax
+spec:
+  selector:
+    matchLabels:
+      app: snorlax
+      tier: postgresql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: snorlax
+        tier: postgresql
+    spec:
+      containers:
+      - image: postgres:10.1-alpine
+        name: postgresql
+        env:
+        - name: POSTGRES_DB
+          value: snorlax-db
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: password
+        ports:
+        - containerPort: 5432
+          name: postgresql
+        volumeMounts:
+        - name: postgresql-persistent-storage
+          mountPath: /var/lib/postgresql
+      volumes:
+      - name: postgresql-persistent-storage
+        persistentVolumeClaim:
+          claimName: postgresql-pv-claim
