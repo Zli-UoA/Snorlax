@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: back
+  labels:
+    app: snorlax
+spec:
+  ports:
+    - port: 8080
+  selector:
+    app: snorlax
+    tier: backend
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: snorlax-back
+  labels:
+    app: snorlax
+spec:
+  selector:
+    matchLabels:
+      app: snorlax
+      tier: backend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: snorlax
+        tier: backend
+    spec:
+      containers:
+      - image: yt8492/snorlax
+        name: snorlax
+        env:
+        - name: DB_URL
+          value: jdbc:postgresql://snorlax-postgresql:5432/snorlax-db
+        - name: DB_USER
+          value: postgres
+        - name: DB_PASSWORD
+          value: password
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: access-key
+              name: ceph-objectstore
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret-access-key
+              name: ceph-objectstore
+        - name: S3_URL
+          valueFrom:
+            secretKeyRef:
+              key: aws-host
+              name: ceph-objectstore
+        ports:
+        - containerPort: 8080
+          name: snorlax

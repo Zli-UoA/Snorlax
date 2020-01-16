@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: front
+  labels:
+    app: snorlax
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: snorlax
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: snorlax-front
+  labels:
+    app: snorlax
+spec:
+  selector:
+    matchLabels:
+      app: snorlax
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: snorlax
+        tier: frontend
+    spec:
+      containers:
+      - image: yt8492/snorlax-front
+        name: snorlax-front
+        ports:
+        - containerPort: 80
+          name: snorlax-front
